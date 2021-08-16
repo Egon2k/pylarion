@@ -1,12 +1,12 @@
 from workitem import workitem
-from page import page
+from module import module
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
 
 class parser():
     workitems = dict()
-    pages = list()
+    modules = dict()
 
     def parseWoritems(self, path):
         results = list(Path(path).rglob("workitem.xml"))
@@ -36,10 +36,38 @@ class parser():
                                           type = type)
     
     def parseModules(self, path):
-        pass
+        results = list(Path(path).rglob("module.xml"))
+
+        for result in results:
+            tree = ET.parse(result)
+            root = tree.getroot()
+
+            for field in root.iter("field"):
+                if field.attrib["id"] == "title":
+                    title = field.text
+                if field.attrib["id"] == "author":
+                    author = field.text
+                if field.attrib["id"] == "created":
+                    created = field.text
+                if field.attrib["id"] == "homePageContent":
+                    homePageContent = field.text
+                if field.attrib["id"] == "status":
+                    status = field.text
+                if field.attrib["id"] == "type":
+                    type = field.text
+        
+            self.modules[title] = module(title = title,
+                                        author = author,
+                                        created = created,
+                                        homePageContent = homePageContent,
+                                        status = status,
+                                        type = type)
     
     def getWorkitemById(self, id):
         return self.workitems[id]
+
+    def getModuleByTitle(self, title):
+        return self.modules[title]
 
 if __name__ == "__main__":
     parser = parser()
@@ -51,3 +79,6 @@ if __name__ == "__main__":
     print(workitem.id)
     print(workitem.created)
     print(workitem.type)
+
+    module = parser.getModuleByTitle("APP Software Specification")
+    print(module.getDescription())
