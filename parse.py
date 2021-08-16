@@ -17,26 +17,19 @@ class parser():
             tree = ET.parse(result)
             root = tree.getroot()
 
-            for field in root.iter("field"):
-                if field.attrib["id"] == "title":
-                    title = field.text
-                if field.attrib["id"] == "author":
-                    author = field.text
-                if field.attrib["id"] == "created":
-                    created = field.text
-                if field.attrib["id"] == "description":
-                    description = field.text
-                if field.attrib["id"] == "type":
-                    type = field.text
-                    
+            values = self.__getValuesFromWorkitem(root, ['title', 
+                                                         'author', 
+                                                         'created', 
+                                                         'description',
+                                                         'type'])
 
             self.workitems[id] = workitem(id = id,
-                                          title = title,
-                                          author = author,
-                                          created =  created,
-                                          description =  description,
+                                          title = values['title'],
+                                          author = values['author'],
+                                          created =  values['created'],
+                                          description =  values['description'],
                                           linkedWorkitems = [],
-                                          type = type)
+                                          type = values['type'])
     
     def parseModules(self, path):
         results = list(Path(path).rglob("module.xml"))
@@ -45,26 +38,32 @@ class parser():
             tree = ET.parse(result)
             root = tree.getroot()
 
-            for field in root.iter("field"):
-                if field.attrib["id"] == "title":
-                    title = field.text
-                if field.attrib["id"] == "author":
-                    author = field.text
-                if field.attrib["id"] == "created":
-                    created = field.text
-                if field.attrib["id"] == "homePageContent":
-                    homePageContent = field.text
-                if field.attrib["id"] == "status":
-                    status = field.text
-                if field.attrib["id"] == "type":
-                    type = field.text
+            values = self.__getValuesFromWorkitem(root, ['title', 
+                                                         'author', 
+                                                         'created', 
+                                                         'homePageContent',
+                                                         'status',
+                                                         'type'])
+            
+            self.modules[values['title']] = module(title = values['title'],
+                                                   author = values['author'],
+                                                   created = values['created'],
+                                                   homePageContent = values['homePageContent'],
+                                                   status = values['status'],
+                                                   type = values['type'])
+
+    def __getValuesFromWorkitem(self, root, attributes):
+        values = dict()
         
-            self.modules[title] = module(title = title,
-                                         author = author,
-                                         created = created,
-                                         homePageContent = homePageContent,
-                                         status = status,
-                                         type = type)
+        for field in root.iter("field"):
+            if field.attrib["id"] in attributes:
+                values[field.attrib["id"]] = field.text
+
+        # fill all other entries in the dict with empty string
+        for attribute in attributes:
+            if attribute not in values:
+                values[attribute] = ""
+        return values
 
     def getWorkitemsDict(self):
         return self.workitems
@@ -89,10 +88,24 @@ if __name__ == "__main__":
     print(workitem.type)
 
     module = parser.getModuleByTitle("APP Software Specification")
-    #print(module.homePageContent)
     moduleElements = module.getWorkitemList()
 
-    for moduleElement in moduleElements:
-        #print(moduleElement.workitemId)
-        print(workitems[moduleElement.workitemId].id + " - " + workitems[moduleElement.workitemId].title)
+    
+    content = ''
 
+    content += '<html><body>\n'
+    for moduleElement in moduleElements:
+        content += f'<{moduleElement.tag}>'
+        content += workitems[moduleElement.workitemId].id + " - " + workitems[moduleElement.workitemId].title
+        
+        if workitems[moduleElement.workitemId].description != "":
+            content += '<p>'
+            content += workitems[moduleElement.workitemId].description
+            content += '</p>'
+        content += f'</{moduleElement.tag}>\n'
+    content += '</body></html>\n'
+    
+    f = open("index.html", "w")
+    f.write(content)
+    f.close()
+    
