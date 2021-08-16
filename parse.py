@@ -1,5 +1,5 @@
 from workitem import workitem
-from module import module
+from module import module, moduleElement
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
@@ -18,6 +18,8 @@ class parser():
             root = tree.getroot()
 
             for field in root.iter("field"):
+                if field.attrib["id"] == "title":
+                    title = field.text
                 if field.attrib["id"] == "author":
                     author = field.text
                 if field.attrib["id"] == "created":
@@ -29,6 +31,7 @@ class parser():
                     
 
             self.workitems[id] = workitem(id = id,
+                                          title = title,
                                           author = author,
                                           created =  created,
                                           description =  description,
@@ -57,11 +60,14 @@ class parser():
                     type = field.text
         
             self.modules[title] = module(title = title,
-                                        author = author,
-                                        created = created,
-                                        homePageContent = homePageContent,
-                                        status = status,
-                                        type = type)
+                                         author = author,
+                                         created = created,
+                                         homePageContent = homePageContent,
+                                         status = status,
+                                         type = type)
+
+    def getWorkitemsDict(self):
+        return self.workitems
     
     def getWorkitemById(self, id):
         return self.workitems[id]
@@ -74,6 +80,8 @@ if __name__ == "__main__":
 
     parser.parseWoritems("./checkout")
     parser.parseModules("./checkout")
+
+    workitems = parser.getWorkitemsDict()
     
     workitem = parser.getWorkitemById("RTB-2929")
     print(workitem.id)
@@ -81,4 +89,10 @@ if __name__ == "__main__":
     print(workitem.type)
 
     module = parser.getModuleByTitle("APP Software Specification")
-    print(module.getDescription())
+    #print(module.homePageContent)
+    moduleElements = module.getWorkitemList()
+
+    for moduleElement in moduleElements:
+        #print(moduleElement.workitemId)
+        print(workitems[moduleElement.workitemId].id + " - " + workitems[moduleElement.workitemId].title)
+
