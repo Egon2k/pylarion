@@ -1,5 +1,5 @@
 from dataclasses import dataclass
 
 @dataclass
-class page():
+class module():
     id: int
